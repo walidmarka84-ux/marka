@@ -13,7 +13,7 @@ local AllowedIDs = {
     10129414384, -- Place 1
     10505016592, 9030856047,9220788049, 10379860217, 8918530949, 9183871127, 8324859397, 8814679373, 9735430757,
     10230482489, 5803230240, 9391300343, 10525469808, 10620536560, 10519595368, 10280159005, 10617002881, 10213893657, 10155452329,
-    7198951018, 9596577193, 2940298265, 10155774845, 9680871870, 9604173560, 2965928861, 8757349205, 9795520740, 8209937388,9773974365,0,5168784918,4420079563,9480966623,10812436688,4061928043,8580890295,10484804177,2740417684,2874312660,10067827165,2041444475,10052227291,0,0
+    7198951018, 9596577193, 2940298265, 10155774845, 9680871870, 9604173560, 2965928861, 8757349205, 9795520740, 8209937388,9773974365,0,5168784918,4420079563,9480966623,10812436688,4061928043,8580890295,10484804177,2740417684,2874312660,10067827165,7244375587,10052227291,0,0
 }
 
 local function isAllowed()
@@ -51,7 +51,7 @@ local RARITY_COLORS = {
 local UPDATE_DEBOUNCE_TIME = 10
 local lastUpdateTime = {}
 
-local InventoryFOVRadius = 1500   -- FOV pour ESP Inventory
+local InventoryFOVRadius = 1500
 
 local function getToolColor(name)
     local n = name:lower()
@@ -76,19 +76,12 @@ local function getToolColor(name)
     return Color3.fromRGB(255, 255, 255)
 end
 
--- === getRealName simplifié : affiche le vrai nom / ID ===
 local function getRealName(t)
     if not t or not t.Name then return "Unknown" end
-    
     local originalName = t.Name
+    if nameCache[originalName] then return nameCache[originalName] end
     
-    if nameCache[originalName] then 
-        return nameCache[originalName] 
-    end
-    
-    -- On essaie de trouver le vrai nom dans ReplicatedStorage ou StarterPack
     local h = t:FindFirstChild("Handle")
-    
     for _, folder in ipairs({ReplicatedStorage:FindFirstChild("Items"), StarterPack}) do
         if folder then
             for _, item in ipairs(folder:GetDescendants()) do
@@ -113,7 +106,6 @@ local function getRealName(t)
         end
     end
     
-    -- Si on ne trouve pas, on garde le nom original (ID)
     nameCache[originalName] = originalName
     return originalName
 end
@@ -137,7 +129,6 @@ local function updateESP(p)
         end
     end
 
-    -- === FOV POUR ESP INVENTORY ===
     local inFOV = true
     local root = char:FindFirstChild("HumanoidRootPart")
     if root then
@@ -258,33 +249,138 @@ end
 for _, p in ipairs(Players:GetPlayers()) do createESP(p) end
 Players.PlayerAdded:Connect(createESP)
 
--- === INTERFACE ===
+-- === INTERFACE COMPACTE ET LOGIQUE ===
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 ScreenGui.Name = "anouar777x_KING"
 ScreenGui.IgnoreGuiInset = true
 ScreenGui.ResetOnSpawn = false
 
+-- MainFrame ajusté pour contenir tous les éléments sans dépasser
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0.4, 0, 0.65, 0)
-MainFrame.Position = UDim2.new(0.3, 0, 0.18, 0)
+MainFrame.Size = UDim2.new(0.4, 0, 0.78, 0)
+MainFrame.Position = UDim2.new(0.3, 0, 0.11, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)
 MainFrame.BorderSizePixel = 0
 MainFrame.Visible = false
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0,8)
 
+local MainDrag = Instance.new("Frame", MainFrame)
+MainDrag.Size = UDim2.new(1,0,0.08,0)
+MainDrag.BackgroundTransparency = 1
+
+-- Protected Label (en haut, compact)
 local ProtectedLabel = Instance.new("TextLabel", MainFrame)
-ProtectedLabel.Size = UDim2.new(0.8,0,0.08,0)
-ProtectedLabel.Position = UDim2.new(0.1,0,0.02,0)
+ProtectedLabel.Size = UDim2.new(0.9,0,0.06,0)
+ProtectedLabel.Position = UDim2.new(0.05,0,0.01,0)
 ProtectedLabel.BackgroundTransparency = 1
-ProtectedLabel.Text = "Protected: 0 | ID: " .. LocalPlayer.UserId .. ""
+ProtectedLabel.Text = "Protected: 0 | ID: " .. LocalPlayer.UserId
 ProtectedLabel.TextColor3 = Color3.fromRGB(0,255,0)
 ProtectedLabel.TextScaled = true
 ProtectedLabel.Font = Enum.Font.SourceSansBold
 
-local MainDrag = Instance.new("Frame", MainFrame)
-MainDrag.Size = UDim2.new(1,0,0.1,0)
-MainDrag.BackgroundTransparency = 1
+-- ESP Inventory
+local ESPInventoryToggle = Instance.new("TextButton", MainFrame)
+ESPInventoryToggle.Size = UDim2.new(0.9,0,0.08,0)
+ESPInventoryToggle.Position = UDim2.new(0.05,0,0.08,0)
+ESPInventoryToggle.BackgroundColor3 = Color3.fromRGB(0,255,0)
+ESPInventoryToggle.Text = "ESP Inventory: ON"
+ESPInventoryToggle.TextScaled = true
+ESPInventoryToggle.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", ESPInventoryToggle).CornerRadius = UDim.new(0,6)
 
+-- ESP
+local ESPToggle = Instance.new("TextButton", MainFrame)
+ESPToggle.Size = UDim2.new(0.9,0,0.08,0)
+ESPToggle.Position = UDim2.new(0.05,0,0.17,0)
+ESPToggle.BackgroundColor3 = Color3.fromRGB(255,0,0)
+ESPToggle.Text = "ESP: OFF"
+ESPToggle.TextScaled = true
+ESPToggle.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", ESPToggle).CornerRadius = UDim.new(0,6)
+
+-- Aimbot
+local AimbotToggle = Instance.new("TextButton", MainFrame)
+AimbotToggle.Size = UDim2.new(0.9,0,0.08,0)
+AimbotToggle.Position = UDim2.new(0.05,0,0.26,0)
+AimbotToggle.BackgroundColor3 = Color3.fromRGB(255,0,0)
+AimbotToggle.Text = "Aimbot: OFF"
+AimbotToggle.TextScaled = true
+AimbotToggle.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", AimbotToggle).CornerRadius = UDim.new(0,6)
+
+-- Prediction (NOUVEAU)
+local PredictionToggle = Instance.new("TextButton", MainFrame)
+PredictionToggle.Size = UDim2.new(0.9,0,0.08,0)
+PredictionToggle.Position = UDim2.new(0.05,0,0.35,0)
+PredictionToggle.BackgroundColor3 = Color3.fromRGB(255,100,0)
+PredictionToggle.Text = "click to use setting aimbot mp5/ak47/m16/skorpion"
+PredictionToggle.TextScaled = true
+PredictionToggle.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", PredictionToggle).CornerRadius = UDim.new(0,6)
+
+-- Wallcheck
+local WallcheckToggle = Instance.new("TextButton", MainFrame)
+WallcheckToggle.Size = UDim2.new(0.9,0,0.08,0)
+WallcheckToggle.Position = UDim2.new(0.05,0,0.44,0)
+WallcheckToggle.BackgroundColor3 = Color3.fromRGB(0,255,0)
+WallcheckToggle.Text = "Wallcheck: ON"
+WallcheckToggle.TextScaled = true
+WallcheckToggle.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", WallcheckToggle).CornerRadius = UDim.new(0,6)
+
+-- FOV Slider
+local FOVSlider = Instance.new("TextBox", MainFrame)
+FOVSlider.Size = UDim2.new(0.9,0,0.08,0)
+FOVSlider.Position = UDim2.new(0.05,0,0.53,0)
+FOVSlider.BackgroundColor3 = Color3.fromRGB(50,50,50)
+FOVSlider.Text = "FOV: 110"
+FOVSlider.TextColor3 = Color3.fromRGB(255,0,0)
+FOVSlider.TextScaled = true
+Instance.new("UICorner", FOVSlider).CornerRadius = UDim.new(0,6)
+
+-- Inventory FOV Slider
+local InventoryFOVSlider = Instance.new("TextBox", MainFrame)
+InventoryFOVSlider.Size = UDim2.new(0.9,0,0.08,0)
+InventoryFOVSlider.Position = UDim2.new(0.05,0,0.62,0)
+InventoryFOVSlider.BackgroundColor3 = Color3.fromRGB(50,50,50)
+InventoryFOVSlider.Text = "Esp Inventory FOV: 1500"
+InventoryFOVSlider.TextColor3 = Color3.fromRGB(0,255,150)
+InventoryFOVSlider.TextScaled = true
+Instance.new("UICorner", InventoryFOVSlider).CornerRadius = UDim.new(0,6)
+
+-- Target
+local AimPartToggle = Instance.new("TextButton", MainFrame)
+AimPartToggle.Size = UDim2.new(0.9,0,0.08,0)
+AimPartToggle.Position = UDim2.new(0.05,0,0.71,0)
+AimPartToggle.BackgroundColor3 = Color3.fromRGB(100,100,255)
+AimPartToggle.Text = "Target: Head (fixed)"
+AimPartToggle.TextScaled = true
+AimPartToggle.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", AimPartToggle).CornerRadius = UDim.new(0,6)
+
+-- FOV Circle
+local FOVCircleToggle = Instance.new("TextButton", MainFrame)
+FOVCircleToggle.Size = UDim2.new(0.9,0,0.08,0)
+FOVCircleToggle.Position = UDim2.new(0.05,0,0.80,0)
+FOVCircleToggle.BackgroundColor3 = Color3.fromRGB(0,255,0)
+FOVCircleToggle.Text = "FOV Circle: ON"
+FOVCircleToggle.TextScaled = true
+FOVCircleToggle.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", FOVCircleToggle).CornerRadius = UDim.new(0,6)
+
+-- Player List (en bas, prend le reste de l'espace)
+local PlayerListFrame = Instance.new("ScrollingFrame", MainFrame)
+PlayerListFrame.Size = UDim2.new(0.9,0,0.17,0)
+PlayerListFrame.Position = UDim2.new(0.05,0,0.89,0)
+PlayerListFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+PlayerListFrame.ScrollBarThickness = 4
+PlayerListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Instance.new("UICorner", PlayerListFrame).CornerRadius = UDim.new(0,6)
+
+local PlayerListLayout = Instance.new("UIListLayout", PlayerListFrame)
+PlayerListLayout.Padding = UDim.new(0,3)
+
+-- Toggle Button (hors du MainFrame)
 local ToggleButton = Instance.new("TextButton", ScreenGui)
 ToggleButton.Size = UDim2.new(0,100,0,40)
 ToggleButton.Position = UDim2.new(0.9,0,0.05,0)
@@ -299,86 +395,6 @@ local ToggleDrag = Instance.new("Frame", ToggleButton)
 ToggleDrag.Size = UDim2.new(1,0,1,0)
 ToggleDrag.BackgroundTransparency = 1
 
-local ESPInventoryToggle = Instance.new("TextButton", MainFrame)
-ESPInventoryToggle.Size = UDim2.new(0.8,0,0.12,0)
-ESPInventoryToggle.Position = UDim2.new(0.1,0,0.12,0)
-ESPInventoryToggle.BackgroundColor3 = Color3.fromRGB(0,255,0)
-ESPInventoryToggle.Text = "ESP Inventory: ON"
-ESPInventoryToggle.TextScaled = true
-Instance.new("UICorner", ESPInventoryToggle).CornerRadius = UDim.new(0,8)
-
-local ESPToggle = Instance.new("TextButton", MainFrame)
-ESPToggle.Size = UDim2.new(0.8,0,0.12,0)
-ESPToggle.Position = UDim2.new(0.1,0,0.26,0)
-ESPToggle.BackgroundColor3 = Color3.fromRGB(255,0,0)
-ESPToggle.Text = "ESP: OFF"
-ESPToggle.TextScaled = true
-Instance.new("UICorner", ESPToggle).CornerRadius = UDim.new(0,8)
-
-local AimbotToggle = Instance.new("TextButton", MainFrame)
-AimbotToggle.Size = UDim2.new(0.8,0,0.12,0)
-AimbotToggle.Position = UDim2.new(0.1,0,0.40,0)
-AimbotToggle.BackgroundColor3 = Color3.fromRGB(255,0,0)
-AimbotToggle.Text = "Aimbot: OFF"
-AimbotToggle.TextScaled = true
-Instance.new("UICorner", AimbotToggle).CornerRadius = UDim.new(0,8)
-
-local WallcheckToggle = Instance.new("TextButton", MainFrame)
-WallcheckToggle.Size = UDim2.new(0.8,0,0.12,0)
-WallcheckToggle.Position = UDim2.new(0.1,0,0.54,0)
-WallcheckToggle.BackgroundColor3 = Color3.fromRGB(0,255,0)
-WallcheckToggle.Text = "Wallcheck: ON"
-WallcheckToggle.TextScaled = true
-WallcheckToggle.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", WallcheckToggle).CornerRadius = UDim.new(0,8)
-
-local FOVSlider = Instance.new("TextBox", MainFrame)
-FOVSlider.Size = UDim2.new(0.8,0,0.12,0)
-FOVSlider.Position = UDim2.new(0.1,0,0.68,0)
-FOVSlider.BackgroundColor3 = Color3.fromRGB(50,50,50)
-FOVSlider.Text = "FOV: 110"
-FOVSlider.TextColor3 = Color3.fromRGB(255,0,0)
-FOVSlider.TextScaled = true
-Instance.new("UICorner", FOVSlider).CornerRadius = UDim.new(0,8)
-
-local InventoryFOVSlider = Instance.new("TextBox", MainFrame)
-InventoryFOVSlider.Size = UDim2.new(0.8,0,0.12,0)
-InventoryFOVSlider.Position = UDim2.new(0.1,0,0.82,0)
-InventoryFOVSlider.BackgroundColor3 = Color3.fromRGB(50,50,50)
-InventoryFOVSlider.Text = "Esp Inventory FOV: 1500"
-InventoryFOVSlider.TextColor3 = Color3.fromRGB(0, 255, 150)
-InventoryFOVSlider.TextScaled = true
-Instance.new("UICorner", InventoryFOVSlider).CornerRadius = UDim.new(0,8)
-
-local AimPartToggle = Instance.new("TextButton", MainFrame)
-AimPartToggle.Size = UDim2.new(0.8,0,0.12,0)
-AimPartToggle.Position = UDim2.new(0.1,0,0.96,0)
-AimPartToggle.BackgroundColor3 = Color3.fromRGB(100,100,255)
-AimPartToggle.Text = "Target: Head (fixed)"
-AimPartToggle.TextScaled = true
-AimPartToggle.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", AimPartToggle).CornerRadius = UDim.new(0,8)
-
-local FOVCircleToggle = Instance.new("TextButton", MainFrame)
-FOVCircleToggle.Size = UDim2.new(0.8,0,0.12,0)
-FOVCircleToggle.Position = UDim2.new(0.1,0,1.10,0)
-FOVCircleToggle.BackgroundColor3 = Color3.fromRGB(0,255,0)
-FOVCircleToggle.Text = "FOV Circle: ON"
-FOVCircleToggle.TextScaled = true
-FOVCircleToggle.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", FOVCircleToggle).CornerRadius = UDim.new(0,8)
-
-local PlayerListFrame = Instance.new("ScrollingFrame", MainFrame)
-PlayerListFrame.Size = UDim2.new(0.8,0,0.25,0)
-PlayerListFrame.Position = UDim2.new(0.1,0,1.25,0)
-PlayerListFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
-PlayerListFrame.ScrollBarThickness = 6
-PlayerListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-Instance.new("UICorner", PlayerListFrame).CornerRadius = UDim.new(0,8)
-
-local PlayerListLayout = Instance.new("UIListLayout", PlayerListFrame)
-PlayerListLayout.Padding = UDim.new(0,4)
-
 -- Variables
 local espEnabledStatus = false
 local AimbotOn = false
@@ -389,8 +405,9 @@ local FOVCircleForcedOff = false
 local ProtectedPlayers = {}
 local PlayerButtons = {}
 local AIM_SMOOTHNESS = 0.8
-local PREDICTION_TIME = -0.02
+local PREDICTION_TIME = 0.03
 local guiOpen = false
+local PredictionHigh = false
 
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Radius = FOVRadius
@@ -547,13 +564,13 @@ local function UpdateProtectedList()
     for _, p in Players:GetPlayers() do
         if p ~= LocalPlayer then
             local btn = Instance.new("TextButton", PlayerListFrame)
-            btn.Size = UDim2.new(1,-10,0,30)
+            btn.Size = UDim2.new(1,-8,0,25)
             local prot = ProtectedPlayers[p] or false
             btn.BackgroundColor3 = prot and Color3.fromRGB(0,100,255) or Color3.fromRGB(60,60,60)
             btn.Text = p.DisplayName .. " (@" .. p.Name .. ")" .. (prot and " ✔" or "")
             btn.TextColor3 = Color3.new(1,1,1)
             btn.TextScaled = true
-            Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0,4)
             table.insert(PlayerButtons, btn)
 
             btn.MouseButton1Click:Connect(function()
@@ -564,7 +581,7 @@ local function UpdateProtectedList()
     end
     local count = 0 
     for _ in pairs(ProtectedPlayers) do count = count + 1 end
-    ProtectedLabel.Text = "Protected: " .. count .. " | ID: " .. LocalPlayer.UserId .. " (30 slots)"
+    ProtectedLabel.Text = "Protected: " .. count .. " | ID: " .. LocalPlayer.UserId
 end
 
 Players.PlayerAdded:Connect(UpdateProtectedList)
@@ -667,6 +684,20 @@ AimbotToggle.MouseButton1Click:Connect(function()
     AimbotOn = not AimbotOn
     AimbotToggle.Text = "Aimbot: " .. (AimbotOn and "ON" or "OFF")
     AimbotToggle.BackgroundColor3 = AimbotOn and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
+end)
+
+-- === HANDLER PREDICTION ===
+PredictionToggle.MouseButton1Click:Connect(function()
+    PredictionHigh = not PredictionHigh
+    if PredictionHigh then
+        PREDICTION_TIME = 0.03
+        PredictionToggle.Text = "this setting for mp5/ak47/m16/skorpion"
+        PredictionToggle.BackgroundColor3 = Color3.fromRGB(0,255,100)
+    else
+        PREDICTION_TIME = -0.02
+        PredictionToggle.Text = "this setting for remi/sawn off/double barrel"
+        PredictionToggle.BackgroundColor3 = Color3.fromRGB(255,100,0)
+    end
 end)
 
 AimPartToggle.MouseButton1Click:Connect(function()
